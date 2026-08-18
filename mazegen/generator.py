@@ -26,4 +26,5 @@ class MazeGenerator:
         pattern_w = len(self.pattern_42[0])
 
         if self.width < self.pattern_w + 4 or self.height < pattern_h + 4:
-            print()
+            print("Maze size is too small for pattern 42.")
+            return
