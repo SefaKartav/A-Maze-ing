@@ -11,6 +11,14 @@ class MazeGenerator:
         [0, 0, 1, 0, 1, 1, 1]
     ]
 
+    PATTERN_42_FALSE: List[List[int]] = [
+        [1, 0, 1, 1, 1, 1],
+        [1, 0, 1, 0, 0, 1],
+        [1, 1, 1, 1, 1, 1],
+        [0, 0, 1, 1, 0, 0],
+        [0, 0, 1, 1, 1, 1]
+    ]
+
     directions: Dict[str, Tuple[int, int, int, int]] = {
         'N': (0, -1, 1, 4),
         'S': (0, 1, 4, 1),
@@ -27,9 +35,16 @@ class MazeGenerator:
         self.visited: List[List[bool]] = [[False for _ in range(width)] for _ in range(height)]
 
         self._pattern_42()
-        self._perfect_maze()
+
+        if self.perfect:
+            self._perfect_maze()
+        else:
+            self._false_maze()
+            
 
     def _pattern_42(self) -> None:
+
+        active_pattern = self.PATTERN_42 if self.perfect else self.PATTERN_42_FALSE
         pattern_h = len(self.PATTERN_42)
         pattern_w = len(self.PATTERN_42[0])
 
@@ -37,12 +52,12 @@ class MazeGenerator:
             print("Maze size is too small for pattern 42.")
             return
 
-        start_y = 1
-        start_x = 1
+        start_y = (self.height - pattern_h) // 2
+        start_x = (self.width - pattern_w) // 2
 
         for y in range(pattern_h):
             for x in range(pattern_w):
-                if self.PATTERN_42[y][x] == 1:
+                if active_pattern[y][x] == 1:
                     self.visited[start_y + y][start_x + x] = True
 
     def _not_visited_find(self, x: int, y: int) -> List[Tuple[int, int]]:
@@ -99,3 +114,35 @@ class MazeGenerator:
                 stack.append((next_x, next_y))
             else:
                 stack.pop()
+
+
+    def _count_closed_walls(self, x: int, y: int) -> int:
+        return bin(self.wall[y][x]).count('1')
+
+
+    def _break_random_wall(self, x: int, y: int) -> None:
+        breakable_list = []
+
+        if (self.wall[y][x] & 1) and y - 1 >= 0 and self.wall[y - 1][x] != 15:
+            breakable_list.append((x, y - 1))
+        if (self.wall[y][x] & 2) and x + 1 < self.width and self.wall[y][x + 1] != 15:
+            breakable_list.append((x + 1, y))
+        if (self.wall[y][x] & 4) and y + 1 < self.height and self.wall[y + 1 ] != 15:
+            breakable_list.append((x, y + 1))
+        if (self.wall[y][x] & 8) and x - 1 >= 0 and self.wall[y][x - 1] != 15:
+            breakable_list.append((x - 1, y))
+
+        if breakable_list:
+            br_next_x, br_next_y = random.choice(breakable_list)
+            self._break_the_wall_between(x, y, br_next_x, br_next_y)
+
+    def _remove_dead_ends(self) -> None:
+        for y in range(self.height):
+            for x in range(self.width):
+                if self.wall[y][x] == 15:
+                    continue
+
+                if self._count_closed_walls == 3:
+                    self._break_random_wall(x, y)
+
+    
