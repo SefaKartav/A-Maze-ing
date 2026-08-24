@@ -14,7 +14,7 @@ Projenin temel iskeletinin ve kalite kontrol mekanizmalarının kurulması.
   - `debug`: `pdb` entegrasyonu ile debug modu.
   - `clean`: `__pycache__`, `.mypy_cache` temizliği.
   - `lint`: `flake8 .` ve `mypy .` komutlarının çalıştırılması (zorunlu kurallar: `--warn-return-any`, `--disallow-untyped-defs`, vb.).
-- [ ] **Tip Kontrolü ve Linter:** Statik tip ipuçlarının (Type Hints) tüm modüllerde zorunlu kılınması.
+- [x] **Tip Kontrolü ve Linter:** Statik tip ipuçlarının (Type Hints) tüm modüllerde zorunlu kılınması.
 
 ---
 
@@ -30,16 +30,16 @@ Projenin temel iskeletinin ve kalite kontrol mekanizmalarının kurulması.
 ## 🧠 Faz 3: Algoritma Mimarisi ve Harita Üretimi (Core Generation)
 Harita üretimi (Generation) için 4 eksenli bölge mantığının uygulanması.
 
-- [ ] **Bölgesel (Quadrant) Mimari:**
+- [x] **Bölgesel (Quadrant) Mimari:**
   - Haritanın yatay ve dikey eksenlerle dört ana bölgeye ayrılması (özellikle varsayılan `PERFECT=False` / Pac-Man modu için).
   - Bölgeler arası geçişi sağlamak üzere eksenler üzerinde "kapıların" (bağlantı noktalarının) rastgele belirlenmesi.
-- [ ] **Oyun Alanı (Pac-Man) Kuralları (`PERFECT=False`):**
+- [x] **Oyun Alanı (Pac-Man) Kuralları (`PERFECT=False`):**
   - **Döngüler (Loops):** `maze_analyzer.py` analiz aracından geçecek şekilde minimum 2 bağımsız rotanın oluşturulması.
   - **Açık Alan Kısıtlaması:** Koridorların maksimum 2 hücre genişliğinde olması (3x3 açık alanların engellenmesi).
   - **Stratejik Noktalar:** 4 köşe ve haritanın merkez hücresinin **kesinlikle** açık koridor olarak ayarlanması.
-- [ ] **Sabit "42" Deseni:**
+- [x] **Sabit "42" Deseni:**
   - Tamamen kapalı hücrelerden oluşan "42" deseninin, eksenlerin veya bölgesel kapıların üzerine denk gelmeyecek uygun bir koordinata yerleştirilmesi.
-- [ ] **Akademik Mod (`PERFECT=True`):**
+- [x] **Akademik Mod (`PERFECT=True`):**
   - Labirentin sadece tek bir çözüm yolu olacak şekilde (döngüsüz) üretilmesi (Örn: Recursive Backtracker veya Prim algoritması ile).
 
 ---
