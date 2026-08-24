@@ -136,7 +136,7 @@ class MazeGenerator:
             br_next_x, br_next_y = random.choice(breakable_list)
             self._break_the_wall_between(x, y, br_next_x, br_next_y)
 
-    def _remove_dead_ends(self) -> None:
+    def _remove_dead_ends(self) -> List[Tuple[int, int]]:
         for y in range(self.height):
             for x in range(self.width):
                 if self.wall[y][x] == 15:
@@ -145,4 +145,28 @@ class MazeGenerator:
                 if self._count_closed_walls == 3:
                     self._break_random_wall(x, y)
 
+    def _ensure_key_cells_open(self) -> None:
+        center_x = self.width // 2
+        center_y = self.height // 2
+        
+        key_points = [
+            (0, 0),
+            (self.width - 1, 0),
+            (0, self.height - 1),
+            (self.width - 1, self.height - 1),
+            (center_x, center_y)
+        ]
+        
+        for x, y in key_points:
+            if 0 <= x < self.width and 0 <= y < self.height:
+                if self.wall[y][x] != 15:
+                    attempts = 0
+                    while self._count_closed_walls(x, y) >= 3 and attempts < 4:
+                        self._break_random_wall(x, y)
+                        attempts += 1
+
+
+    def _false_maze(self) -> None:
+        self._remove_dead_ends()
+        self._ensure_key_cells_open()
     
