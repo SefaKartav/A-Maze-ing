@@ -10,11 +10,11 @@ PATTERN_42: List[List[int]] = [
 ]
 
 PATTERN_42_FALSE: List[List[int]] = [
-    [1, 0, 1, 1, 1, 1],
-    [1, 0, 1, 0, 0, 1],
-    [1, 1, 1, 1, 1, 1],
-    [0, 0, 1, 1, 0, 0],
-    [0, 0, 1, 1, 1, 1]
+    [1, 0, 1, 0, 1, 1, 1],
+    [1, 0, 1, 0, 0, 0, 1],
+    [1, 1, 1, 0, 1, 1, 1],
+    [0, 0, 1, 0, 1, 0, 0],
+    [0, 0, 1, 0, 1, 1, 1]
 ]
 
 directions: Dict[str, Tuple[int, int, int, int]] = {
@@ -26,8 +26,8 @@ directions: Dict[str, Tuple[int, int, int, int]] = {
 
 def _pattern_42(visited: List[List[bool]], width: int, height: int, perfect: bool) -> None:
     active_pattern = PATTERN_42 if perfect else PATTERN_42_FALSE
-    pattern_h = len(PATTERN_42)
-    pattern_w = len(PATTERN_42[0])
+    pattern_h = len(active_pattern)
+    pattern_w = len(active_pattern[0])
 
     if width < pattern_w + 4 or height < pattern_h + 4:
         print("Maze size is too small for pattern 42.")

@@ -42,6 +42,10 @@ class MazeGenerator:
             else:
                 stack.pop()
 
+    def _output(self) -> None:
+        open("output.txt", "w")
+
+
     def _false_maze(self) -> None:
         self._perfect_maze()
         utils._remove_dead_ends(self.wall, self.width, self.height)

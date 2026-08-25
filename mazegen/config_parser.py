@@ -1,5 +1,6 @@
 import os
 from typing import Dict, Any, List
+from typing import List, Tuple
 
 
 class ConfigParser:
@@ -33,7 +34,7 @@ class ConfigParser:
         elif key == 'PERFECT':
             self.config[key] = value.lower() in ('true', '1', 'yes')
         else:
-            self.config[key] = value
+            self.config[key] = value 
 
     def _validate(self) -> None:
         mandatory_keys = ['WIDTH',
@@ -46,4 +47,18 @@ class ConfigParser:
             if k not in self.config:
                 raise ValueError(f"Missing "
                                  f"mandatory configuration key: {k}")
+        
+
+
+    def write_maze_output(
+    filepath: str,
+    walls: List[List[int]],
+    entry: Tuple[int, int],
+    exit_pos: Tuple[int, int]) -> None:
+        with open(filepath, "w", encoding="utf-8") as f:
+            for row in walls:
+                f.write("".join(format(cell & 0xF, "x") for cell in row) + "\n")
+        
+            f.write(f"{entry[0]},{entry[1]}\n")
+            f.write(f"{exit_pos[0]},{exit_pos[1]}\n")
 
