@@ -1,8 +1,8 @@
 from mazegen.config_parser import ConfigParser
-from mazegen.generator import MazeGenerator 
+from mazegen.generator import MazeGenerator
 from mazegen.user_interface import NeonTerminalUI
 import sys
-from mazegen.path_finder import solve
+from mazegen.path_finder import solve, path_cells
 
 
 if len(sys.argv) != 2:
@@ -16,14 +16,18 @@ except (FileNotFoundError, ValueError) as err:
     sys.exit(1)
 
 
-gen = MazeGenerator(config["WIDTH"], config["HEIGHT"], config["PERFECT"], config["SEED"])
+gen = MazeGenerator(
+    config["WIDTH"], config["HEIGHT"], config["PERFECT"], config["SEED"]
+)
+
 
 path = solve(gen.wall, gen.width, gen.height, config["ENTRY"], config["EXIT"])
+path_to_cells = path_cells(config["ENTRY"], path or "")
 
 ui = NeonTerminalUI(entry=config["ENTRY"], exit_pos=config["EXIT"])
 
 while True:
-    ui.render(gen.wall, gen.width, gen.height)
+    ui.render(gen.wall, gen.width, gen.height, path_to_cells)
     print("=== A-Maze-ing ===")
     print("1. Re-generate a new maze")
     print("2. Show/Hide the shortest path")
@@ -32,8 +36,15 @@ while True:
     choice = input("Choice? (1-4): ").strip()
 
     if choice == "1":
-        gen = MazeGenerator(config["WIDTH"], config["HEIGHT"], config["PERFECT"])
-        path = solve(gen.wall, gen.width, gen.height, config["ENTRY"], config["EXIT"])
+        gen = MazeGenerator(
+            config["WIDTH"], config["HEIGHT"], config["PERFECT"]
+        )
+        path = solve(
+            gen.wall, gen.width, gen.height,
+            config["ENTRY"], config["EXIT"],
+        )
+
+        path_to_cells = path_cells(config["ENTRY"], path or "")
 
     elif choice == "2":
         ui.toggle_path()

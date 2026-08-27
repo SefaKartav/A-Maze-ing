@@ -1,6 +1,7 @@
 import random
 from typing import List, Tuple, Dict
 
+
 PATTERN_42: List[List[int]] = [
     [1, 0, 1, 0, 1, 1, 1],
     [1, 0, 1, 0, 0, 0, 1],
@@ -24,7 +25,13 @@ directions: Dict[str, Tuple[int, int, int, int]] = {
     'W': (-1, 0, 8, 2)
 }
 
-def _pattern_42(visited: List[List[bool]], width: int, height: int, perfect: bool) -> None:
+
+def _pattern_42(
+    visited: List[List[bool]],
+    width: int,
+    height: int,
+    perfect: bool,
+) -> None:
     active_pattern = PATTERN_42 if perfect else PATTERN_42_FALSE
     pattern_h = len(active_pattern)
     pattern_w = len(active_pattern[0])
@@ -41,7 +48,14 @@ def _pattern_42(visited: List[List[bool]], width: int, height: int, perfect: boo
             if active_pattern[y][x] == 1:
                 visited[start_y + y][start_x + x] = True
 
-def _not_visited_find(visited: List[List[bool]], width: int, height: int, x: int, y: int) -> List[Tuple[int, int]]:
+
+def _not_visited_find(
+    visited: List[List[bool]],
+    width: int,
+    height: int,
+    x: int,
+    y: int,
+) -> List[Tuple[int, int]]:
     adjoining_walls = []
 
     if y - 1 >= 0 and not visited[y - 1][x]:
@@ -55,7 +69,14 @@ def _not_visited_find(visited: List[List[bool]], width: int, height: int, x: int
 
     return adjoining_walls
 
-def _break_the_wall_between(wall: List[List[int]], current_x: int, current_y: int, next_x: int, next_y: int) -> None:
+
+def _break_the_wall_between(
+    wall: List[List[int]],
+    current_x: int,
+    current_y: int,
+    next_x: int,
+    next_y: int,
+) -> None:
     if next_x == current_x + 1:
         wall[current_y][current_x] &= ~2
         wall[next_y][next_x] &= ~8
@@ -72,10 +93,19 @@ def _break_the_wall_between(wall: List[List[int]], current_x: int, current_y: in
         wall[current_y][current_x] &= ~1
         wall[next_y][next_x] &= ~4
 
+
 def _count_closed_walls(wall: List[List[int]], x: int, y: int) -> int:
     return bin(wall[y][x]).count('1')
 
-def _break_random_wall(wall: List[List[int]], width: int, height: int, x: int, y: int, rng: random.Random) -> None:
+
+def _break_random_wall(
+    wall: List[List[int]],
+    width: int,
+    height: int,
+    x: int,
+    y: int,
+    rng: random.Random,
+) -> None:
     breakable_list = []
 
     if (wall[y][x] & 1) and y - 1 >= 0 and wall[y - 1][x] != 15:
@@ -91,7 +121,13 @@ def _break_random_wall(wall: List[List[int]], width: int, height: int, x: int, y
         br_next_x, br_next_y = rng.choice(breakable_list)
         _break_the_wall_between(wall, x, y, br_next_x, br_next_y)
 
-def _remove_dead_ends(wall: List[List[int]], width: int, height: int, rng: random.Random) -> None:
+
+def _remove_dead_ends(
+    wall: List[List[int]],
+    width: int,
+    height: int,
+    rng: random.Random,
+) -> None:
     for y in range(height):
         for x in range(width):
             if wall[y][x] == 15:
@@ -100,10 +136,16 @@ def _remove_dead_ends(wall: List[List[int]], width: int, height: int, rng: rando
             if _count_closed_walls(wall, x, y) == 3:
                 _break_random_wall(wall, width, height, x, y, rng)
 
-def _ensure_key_cells_open(wall: List[List[int]], width: int, height: int, rng: random.Random) -> None:
+
+def _ensure_key_cells_open(
+    wall: List[List[int]],
+    width: int,
+    height: int,
+    rng: random.Random,
+) -> None:
     center_x = width // 2
     center_y = height // 2
-    
+
     key_points = [
         (0, 0),
         (width - 1, 0),
@@ -111,7 +153,7 @@ def _ensure_key_cells_open(wall: List[List[int]], width: int, height: int, rng: 
         (width - 1, height - 1),
         (center_x, center_y)
     ]
-    
+
     for x, y in key_points:
         if 0 <= x < width and 0 <= y < height:
             if wall[y][x] != 15:

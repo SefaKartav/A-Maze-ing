@@ -1,5 +1,5 @@
 import os
-from typing import Dict, Any, List, Tuple
+from typing import Any, Dict, List, Tuple
 
 
 class ConfigParser:
@@ -38,7 +38,7 @@ class ConfigParser:
             else:
                 self.config[key] = int(value)
         else:
-            self.config[key] = value 
+            self.config[key] = value
 
     def _validate(self) -> None:
         mandatory_keys = ['WIDTH',
@@ -52,7 +52,6 @@ class ConfigParser:
                 raise ValueError(f"Missing "
                                  f"mandatory configuration key: {k}")
         self.config.setdefault('SEED', None)
-
 
     @staticmethod
     def write_maze_output(
@@ -70,5 +69,3 @@ class ConfigParser:
             f.write(f"{entry[0]},{entry[1]}\n")
             f.write(f"{exit_pos[0]},{exit_pos[1]}\n")
             f.write(f"{path}\n")
-
-

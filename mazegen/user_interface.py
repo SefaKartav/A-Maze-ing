@@ -1,18 +1,10 @@
-"""Terminal tabanlı yumuşak kenarlı labirent görselleştirme modülü."""
-
 from dataclasses import dataclass
 from typing import List, Optional, Tuple
 
 
 @dataclass
 class StyleConfig:
-    """Arayüz ikonlarını ve çizim karakterlerini tutan yapı.
 
-    Gelecekte glifleri veya hücre içi simgeleri değiştirmek istersen
-    yalnızca bu sınıftaki değerleri güncellemen yeterlidir.
-    """
-
-    # Duvar ve Köşe Çizgileri (Yumuşatılmış Kenarlar)
     wall_h: str = "───"
     wall_v: str = "│"
     corner_tl: str = "╭"
@@ -25,17 +17,15 @@ class StyleConfig:
     t_top: str = "┬"
     t_bottom: str = "┴"
 
-    # Hücre İçi Yumuşatılmış İkonlar / Glifler
     entry_glyph: str = " ▢ "
     exit_glyph: str = " ▣ "
-    path_glyph: str = " ∙ "
+    path_glyph: str = " ◆ "
     pattern_42_glyph: str = " █ "
     empty_glyph: str = "   "
 
 
 @dataclass
 class ColorTheme:
-    """Terminal ANSI RGB renk paletlerini tanımlayan sınıf."""
 
     name: str
     wall_fg: str
@@ -49,10 +39,8 @@ class ColorTheme:
 
 
 class ThemeManager:
-    """Renk temalarını ve tema geçişlerini (Rotate) yöneten sınıf."""
 
     def __init__(self) -> None:
-        """Varsayılan renk temalarını tanımlar."""
         self.themes: List[ColorTheme] = [
             ColorTheme(
                 name="Mavi-Sarı-Kırmızı Kontrast",
@@ -89,17 +77,14 @@ class ThemeManager:
 
     @property
     def current(self) -> ColorTheme:
-        """Aktif renk paletini döndürür."""
         return self.themes[self._current_index]
 
     def rotate(self) -> ColorTheme:
-        """Bir sonraki renk temasına geçer."""
         self._current_index = (self._current_index + 1) % len(self.themes)
         return self.current
 
 
 class SoftTerminalUI:
-    """Yumuşatılmış kenarlara ve özel gliflere sahip terminal arayüzü."""
 
     def __init__(
         self,
@@ -107,13 +92,6 @@ class SoftTerminalUI:
         exit_pos: Tuple[int, int],
         style: Optional[StyleConfig] = None,
     ) -> None:
-        """Arayüz nesnesini başlatır.
-
-        Args:
-            entry: Giriş koordinatları (x, y).
-            exit_pos: Çıkış koordinatları (x, y).
-            style: Özel karakter stilleri konfigürasyonu.
-        """
         self.entry: Tuple[int, int] = entry
         self.exit_pos: Tuple[int, int] = exit_pos
         self.style: StyleConfig = style if style else StyleConfig()
@@ -131,14 +109,6 @@ class SoftTerminalUI:
     def _get_junction_char(
         self, north: bool, south: bool, east: bool, west: bool
     ) -> str:
-        """Çevresindeki duvar bağlantılarına göre doğru köşe karakterini seçer.
-
-        Yumuşatılmış köşe bağlantı mantığı:
-        - Güney + Doğu -> ╭ (Sol üst köşe)
-        - Güney + Batı -> ╮ (Sağ üst köşe)
-        - Kuzey + Doğu -> ╰ (Sol alt köşe)
-        - Kuzey + Batı -> ╯ (Sağ alt köşe)
-        """
         s = self.style
         if north and south and east and west:
             return s.cross
@@ -167,7 +137,6 @@ class SoftTerminalUI:
     def _has_wall(
         self, wall_matrix: List[List[int]], x: int, y: int, bit: int
     ) -> bool:
-        """Hücrenin belirtilen yönünde duvar olup olmadığını güvenle denetler."""
         if 0 <= y < len(wall_matrix) and 0 <= x < len(wall_matrix[0]):
             return bool(wall_matrix[y][x] & bit)
         return False
@@ -175,7 +144,6 @@ class SoftTerminalUI:
     def _render_junction(
         self, wall: List[List[int]], jx: int, jy: int, theme: ColorTheme
     ) -> str:
-        """Hücre kavşak noktalarındaki yumuşak birleşim karakterini oluşturur."""
         has_north = self._has_wall(wall, jx, jy - 1, 8) or self._has_wall(
             wall, jx - 1, jy - 1, 2
         )
@@ -202,7 +170,6 @@ class SoftTerminalUI:
         path: List[Tuple[int, int]],
         theme: ColorTheme,
     ) -> Tuple[str, str]:
-        """Hücre tipi için doğru arka plan rengini ve glif karakterini döner."""
         if (x, y) == self.entry:
             return theme.entry_bg, self.style.entry_glyph
         if (x, y) == self.exit_pos:
@@ -210,7 +177,7 @@ class SoftTerminalUI:
         if cell_val == 15:
             return theme.pattern_42_bg, self.style.pattern_42_glyph
         if self.show_path and (x, y) in path:
-            return theme.path_bg, self.style.path_glyph
+            return theme.empty_bg, self.style.path_glyph
         return theme.empty_bg, self.style.empty_glyph
 
     def render(
@@ -220,7 +187,6 @@ class SoftTerminalUI:
         height: int,
         path: Optional[List[Tuple[int, int]]] = None,
     ) -> None:
-        """Labirenti terminal üzerine yumuşak çizgiler ve ikonlarla çizer."""
         if path is None:
             path = []
 
@@ -270,5 +236,4 @@ class SoftTerminalUI:
         print()
 
 
-# ImportError Hatasını Önleyen Takma Ad (Alias)
 NeonTerminalUI = SoftTerminalUI
