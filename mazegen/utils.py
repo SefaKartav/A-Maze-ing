@@ -75,7 +75,7 @@ def _break_the_wall_between(wall: List[List[int]], current_x: int, current_y: in
 def _count_closed_walls(wall: List[List[int]], x: int, y: int) -> int:
     return bin(wall[y][x]).count('1')
 
-def _break_random_wall(wall: List[List[int]], width: int, height: int, x: int, y: int) -> None:
+def _break_random_wall(wall: List[List[int]], width: int, height: int, x: int, y: int, rng: random.Random) -> None:
     breakable_list = []
 
     if (wall[y][x] & 1) and y - 1 >= 0 and wall[y - 1][x] != 15:
@@ -88,19 +88,19 @@ def _break_random_wall(wall: List[List[int]], width: int, height: int, x: int, y
         breakable_list.append((x - 1, y))
 
     if breakable_list:
-        br_next_x, br_next_y = random.choice(breakable_list)
+        br_next_x, br_next_y = rng.choice(breakable_list)
         _break_the_wall_between(wall, x, y, br_next_x, br_next_y)
 
-def _remove_dead_ends(wall: List[List[int]], width: int, height: int) -> List[Tuple[int, int]]:
+def _remove_dead_ends(wall: List[List[int]], width: int, height: int, rng: random.Random) -> None:
     for y in range(height):
         for x in range(width):
             if wall[y][x] == 15:
                 continue
 
             if _count_closed_walls(wall, x, y) == 3:
-                _break_random_wall(wall, width, height, x, y)
+                _break_random_wall(wall, width, height, x, y, rng)
 
-def _ensure_key_cells_open(wall: List[List[int]], width: int, height: int) -> None:
+def _ensure_key_cells_open(wall: List[List[int]], width: int, height: int, rng: random.Random) -> None:
     center_x = width // 2
     center_y = height // 2
     
@@ -117,5 +117,5 @@ def _ensure_key_cells_open(wall: List[List[int]], width: int, height: int) -> No
             if wall[y][x] != 15:
                 attempts = 0
                 while _count_closed_walls(wall, x, y) >= 3 and attempts < 4:
-                    _break_random_wall(wall, width, height, x, y)
+                    _break_random_wall(wall, width, height, x, y, rng)
                     attempts += 1

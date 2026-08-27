@@ -33,6 +33,11 @@ class ConfigParser:
             self.config[key] = (int(parts[0]), int(parts[1]))
         elif key == 'PERFECT':
             self.config[key] = value.lower() in ('true', '1', 'yes')
+        elif key == 'SEED':
+            if not value or value.lower() == 'none':
+                self.config[key] = None
+            else:
+                self.config[key] = int(value)
         else:
             self.config[key] = value 
 
@@ -47,18 +52,25 @@ class ConfigParser:
             if k not in self.config:
                 raise ValueError(f"Missing "
                                  f"mandatory configuration key: {k}")
+        self.config.setdefault('SEED', None)
         
 
 
+    @staticmethod
     def write_maze_output(
-    filepath: str,
-    walls: List[List[int]],
-    entry: Tuple[int, int],
-    exit_pos: Tuple[int, int]) -> None:
+        filepath: str,
+        walls: List[List[int]],
+        entry: Tuple[int, int],
+        exit_pos: Tuple[int, int],
+        path: str = "",
+    ) -> None:
         with open(filepath, "w", encoding="utf-8") as f:
             for row in walls:
-                f.write("".join(format(cell & 0xF, "x") for cell in row) + "\n")
-        
+                f.write("".join(format(c & 0xF, "x") for c in row) + "\n")
+
+            f.write("\n")
             f.write(f"{entry[0]},{entry[1]}\n")
             f.write(f"{exit_pos[0]},{exit_pos[1]}\n")
+            f.write(f"{path}\n")
+
 
