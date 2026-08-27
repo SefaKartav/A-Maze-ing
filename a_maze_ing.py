@@ -2,6 +2,9 @@ from mazegen.config_parser import ConfigParser
 from mazegen.generator import MazeGenerator 
 from mazegen.user_interface import NeonTerminalUI
 import sys
+from mazegen.path_finder import solve
+
+
 if len(sys.argv) != 2:
     print("Usage: python3 a_maze_ing.py <config_file>", file=sys.stderr)
     sys.exit(1)
@@ -14,6 +17,8 @@ except (FileNotFoundError, ValueError) as err:
 
 
 gen = MazeGenerator(config["WIDTH"], config["HEIGHT"], config["PERFECT"], config["SEED"])
+
+path = solve(gen.wall, gen.width, gen.height, config["ENTRY"], config["EXIT"])
 
 ui = NeonTerminalUI(entry=config["ENTRY"], exit_pos=config["EXIT"])
 
@@ -28,6 +33,8 @@ while True:
 
     if choice == "1":
         gen = MazeGenerator(config["WIDTH"], config["HEIGHT"], config["PERFECT"])
+        path = solve(gen.wall, gen.width, gen.height, config["ENTRY"], config["EXIT"])
+
     elif choice == "2":
         ui.toggle_path()
     elif choice == "3":
@@ -39,4 +46,5 @@ ConfigParser.write_maze_output(
     gen.wall,
     config["ENTRY"],
     config["EXIT"],
+    path or ""
 )

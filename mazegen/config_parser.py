@@ -1,6 +1,5 @@
 import os
-from typing import Dict, Any, List
-from typing import List, Tuple
+from typing import Dict, Any, List, Tuple
 
 
 class ConfigParser:
@@ -53,7 +52,6 @@ class ConfigParser:
                 raise ValueError(f"Missing "
                                  f"mandatory configuration key: {k}")
         self.config.setdefault('SEED', None)
-        
 
 
     @staticmethod
