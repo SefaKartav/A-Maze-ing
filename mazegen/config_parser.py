@@ -14,10 +14,15 @@ class ConfigParser:
                                     f"file not found: {self.filepath}")
 
         with open(self.filepath, 'r', encoding='utf-8') as f:
-            for line in f:
-                line = line.split('#')[0].strip()
-                if not line or '=' not in line:
+            for lineno, raw_line in enumerate(f, 1):
+                line = raw_line.split('#')[0].strip()
+                if not line:
                     continue
+                if '=' not in line:
+                    raise ValueError(
+                        f"Line {lineno} is not in 'KEY=VALUE' "
+                        f"format: {line}"
+                    )
                 key, value = line.split('=', 1)
                 self._process_kv(key.strip(), value.strip())
 
@@ -35,7 +40,17 @@ class ConfigParser:
                 )
             self.config[key] = (int(parts[0]), int(parts[1]))
         elif key == 'PERFECT':
-            self.config[key] = value.lower() in ('true', '1', 'yes')
+            lowered = value.lower()
+            if lowered in ('true', '1', 'yes'):
+                self.config[key] = True
+            elif lowered in ('false', '0', 'no'):
+                self.config[key] = False
+            else:
+                raise ValueError(
+                    f"PERFECT must be a boolean "
+                    f"(True/False), got: {value}"
+                )
+
         elif key == 'SEED':
             if not value or value.lower() == 'none':
                 self.config[key] = None

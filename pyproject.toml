@@ -34,8 +34,8 @@ dev = [
 packages = ["mazegen"]
 
 [tool.flake8]
-exclude = [".git", "__pycache__", ".venv", "build", "dist", "maze_analyzer.py"]
+exclude = [".git", "__pycache__", ".venv", "build", "dist"]
 
 [tool.mypy]
 python_version = "3.10"
-exclude = ["maze_analyzer\\.py", "build/", "dist/"]
+exclude = ["build/", "dist/"]

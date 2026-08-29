@@ -234,6 +234,3 @@ class SoftTerminalUI:
                 print(mid_line)
 
         print()
-
-
-NeonTerminalUI = SoftTerminalUI

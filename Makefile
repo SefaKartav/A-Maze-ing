@@ -35,4 +35,5 @@ clean:
 	rm -rf __pycache__ mazegen/__pycache__
 	rm -rf .mypy_cache .pytest_cache
 	rm -rf build dist *.egg-info
+	rm -rf maze.txt
 	find . -type f -name "*.pyc" -delete
