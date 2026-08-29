@@ -29,6 +29,10 @@ class ConfigParser:
             self.config[key] = int(value)
         elif key in ('ENTRY', 'EXIT'):
             parts = value.split(',')
+            if len(parts) != 2:
+                raise ValueError(
+                    f"{key} must be in 'x,y' format, got: {value}"
+                )
             self.config[key] = (int(parts[0]), int(parts[1]))
         elif key == 'PERFECT':
             self.config[key] = value.lower() in ('true', '1', 'yes')
@@ -51,6 +55,21 @@ class ConfigParser:
             if k not in self.config:
                 raise ValueError(f"Missing "
                                  f"mandatory configuration key: {k}")
+        if self.config['WIDTH'] < 1 or self.config['HEIGHT'] < 1:
+            raise ValueError("WIDTH and HEIGHT must be positive integers")
+
+        w = self.config['WIDTH']
+        h = self.config['HEIGHT']
+        for key in ('ENTRY', 'EXIT'):
+            x, y = self.config[key]
+            if not (0 <= x < w and 0 <= y < h):
+                raise ValueError(
+                    f"{key} coordinates {x},{y} are outside the maze"
+                )
+
+        if self.config['ENTRY'] == self.config['EXIT']:
+            raise ValueError("ENTRY and EXIT must be different cells")
+
         self.config.setdefault('SEED', None)
 
     @staticmethod
