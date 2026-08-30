@@ -1,3 +1,5 @@
+"""Helper functions and the "42" pattern for the maze generator."""
+
 import random
 from typing import List, Tuple, Dict
 
@@ -32,6 +34,7 @@ def _pattern_42(
     height: int,
     perfect: bool,
 ) -> None:
+    """Mark the cells of the "42" pattern as visited, so they stay closed."""
     active_pattern = PATTERN_42 if perfect else PATTERN_42_FALSE
     pattern_h = len(active_pattern)
     pattern_w = len(active_pattern[0])
@@ -56,6 +59,7 @@ def _not_visited_find(
     x: int,
     y: int,
 ) -> List[Tuple[int, int]]:
+    """Return the neighbour cells that the generator has not visited yet."""
     adjoining_walls = []
 
     if y - 1 >= 0 and not visited[y - 1][x]:
@@ -77,6 +81,7 @@ def _break_the_wall_between(
     next_x: int,
     next_y: int,
 ) -> None:
+    """Open the wall between two neighbour cells, on both sides."""
     if next_x == current_x + 1:
         wall[current_y][current_x] &= ~2
         wall[next_y][next_x] &= ~8
@@ -95,6 +100,7 @@ def _break_the_wall_between(
 
 
 def _count_closed_walls(wall: List[List[int]], x: int, y: int) -> int:
+    """Return how many walls of this cell are closed."""
     return bin(wall[y][x]).count('1')
 
 
@@ -106,6 +112,7 @@ def _break_random_wall(
     y: int,
     rng: random.Random,
 ) -> None:
+    """Open one random wall of this cell, but never a wall of a "42" cell."""
     breakable_list = []
 
     if (wall[y][x] & 1) and y - 1 >= 0 and wall[y - 1][x] != 15:
@@ -128,6 +135,7 @@ def _remove_dead_ends(
     height: int,
     rng: random.Random,
 ) -> None:
+    """Open a wall in every dead end, so the board gets loops."""
     for y in range(height):
         for x in range(width):
             if wall[y][x] == 15:
@@ -143,6 +151,7 @@ def _ensure_key_cells_open(
     height: int,
     rng: random.Random,
 ) -> None:
+    """Open the four corners and the centre of the board."""
     center_x = width // 2
     center_y = height // 2
 

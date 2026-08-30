@@ -1,9 +1,12 @@
+"""Draws the maze in the terminal with colours."""
+
 from dataclasses import dataclass
 from typing import List, Optional, Tuple
 
 
 @dataclass
 class StyleConfig:
+    """The characters that the program uses to draw the maze."""
 
     wall_h: str = "───"
     wall_v: str = "│"
@@ -26,6 +29,7 @@ class StyleConfig:
 
 @dataclass
 class ColorTheme:
+    """One colour theme, with a colour for each part of the maze."""
 
     name: str
     wall_fg: str
@@ -39,18 +43,20 @@ class ColorTheme:
 
 
 class ThemeManager:
+    """Keeps the list of colour themes and changes the current one."""
 
     def __init__(self) -> None:
+        """Create the three colour themes and select the first one."""
         self.themes: List[ColorTheme] = [
             ColorTheme(
-                name="Mavi-Sarı-Kırmızı Kontrast",
+                name="Blue-Yellow-Red Contrast",
                 wall_fg="\033[38;2;100;130;170m",
                 wall_bg="\033[48;2;20;28;40m",
                 empty_bg="\033[48;2;10;14;20m",
-                path_bg="\033[48;2;0;128;255m",  # Canlı Mavi
-                entry_bg="\033[48;2;255;50;50m",  # Canlı Kırmızı
-                exit_bg="\033[48;2;255;215;0m",  # Parlak Sarı
-                pattern_42_bg="\033[48;2;255;255;255m",  # Saf Beyaz
+                path_bg="\033[48;2;0;128;255m",
+                entry_bg="\033[48;2;255;50;50m",
+                exit_bg="\033[48;2;255;215;0m",
+                pattern_42_bg="\033[48;2;255;255;255m",
             ),
             ColorTheme(
                 name="Neon Cyberpunk",
@@ -63,7 +69,7 @@ class ThemeManager:
                 pattern_42_bg="\033[48;2;240;240;255m",
             ),
             ColorTheme(
-                name="Monokrom Yumuşak",
+                name="Soft Monochrome",
                 wall_fg="\033[38;2;160;160;160m",
                 wall_bg="\033[48;2;35;35;35m",
                 empty_bg="\033[48;2;18;18;18m",
@@ -77,14 +83,17 @@ class ThemeManager:
 
     @property
     def current(self) -> ColorTheme:
+        """Return the theme that the program uses now."""
         return self.themes[self._current_index]
 
     def rotate(self) -> ColorTheme:
+        """Go to the next theme and return it."""
         self._current_index = (self._current_index + 1) % len(self.themes)
         return self.current
 
 
 class SoftTerminalUI:
+    """Draws the maze in the terminal and keeps the display settings."""
 
     def __init__(
         self,
@@ -92,6 +101,7 @@ class SoftTerminalUI:
         exit_pos: Tuple[int, int],
         style: Optional[StyleConfig] = None,
     ) -> None:
+        """Save the entry and the exit, and prepare the style and the theme."""
         self.entry: Tuple[int, int] = entry
         self.exit_pos: Tuple[int, int] = exit_pos
         self.style: StyleConfig = style if style else StyleConfig()
@@ -99,16 +109,17 @@ class SoftTerminalUI:
         self.show_path: bool = False
 
     def toggle_path(self) -> None:
-        """Çözüm yolunu açıp kapatır."""
+        """Show the path if it is hidden, or hide it if it is shown."""
         self.show_path = not self.show_path
 
     def rotate_colors(self) -> None:
-        """Tema rengini değiştirir."""
+        """Change the colour theme to the next one."""
         self.theme_mgr.rotate()
 
     def _get_junction_char(
         self, north: bool, south: bool, east: bool, west: bool
     ) -> str:
+        """Choose the corner or cross character for a wall junction."""
         s = self.style
         if north and south and east and west:
             return s.cross
@@ -137,6 +148,7 @@ class SoftTerminalUI:
     def _has_wall(
         self, wall_matrix: List[List[int]], x: int, y: int, bit: int
     ) -> bool:
+        """Say if this cell has this wall, and say no if it is outside."""
         if 0 <= y < len(wall_matrix) and 0 <= x < len(wall_matrix[0]):
             return bool(wall_matrix[y][x] & bit)
         return False
@@ -144,6 +156,7 @@ class SoftTerminalUI:
     def _render_junction(
         self, wall: List[List[int]], jx: int, jy: int, theme: ColorTheme
     ) -> str:
+        """Draw one junction between the walls, with its colours."""
         has_north = self._has_wall(wall, jx, jy - 1, 8) or self._has_wall(
             wall, jx - 1, jy - 1, 2
         )
@@ -170,6 +183,7 @@ class SoftTerminalUI:
         path: List[Tuple[int, int]],
         theme: ColorTheme,
     ) -> Tuple[str, str]:
+        """Return the colour and the sign to draw inside one cell."""
         if (x, y) == self.entry:
             return theme.entry_bg, self.style.entry_glyph
         if (x, y) == self.exit_pos:
@@ -187,13 +201,14 @@ class SoftTerminalUI:
         height: int,
         path: Optional[List[Tuple[int, int]]] = None,
     ) -> None:
+        """Draw the whole maze in the terminal, line by line."""
         if path is None:
             path = []
 
         theme = self.theme_mgr.current
         s = self.style
 
-        print(f"\n--- Aktif Tema: {theme.name} ---")
+        print(f"\n--- Active theme: {theme.name} ---")
 
         for y in range(height + 1):
             top_line = ""

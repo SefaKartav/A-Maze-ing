@@ -1,3 +1,5 @@
+"""Main program: reads the config file, draws the maze and saves it."""
+
 from mazegen.config_parser import ConfigParser
 from mazegen.generator import MazeGenerator
 from mazegen.user_interface import SoftTerminalUI

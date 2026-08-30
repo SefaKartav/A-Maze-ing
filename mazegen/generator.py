@@ -1,9 +1,12 @@
+"""The reusable maze generator class."""
+
 import random
 from typing import List, Optional, Tuple
 from . import utils
 
 
 class MazeGenerator:
+    """Builds a random maze and keeps its walls in a grid of numbers."""
 
     def __init__(
         self,
@@ -12,7 +15,7 @@ class MazeGenerator:
         perfect: bool = False,
         seed: Optional[int] = None,
     ) -> None:
-
+        """Build a maze of this size, in perfect mode or in Pac-Man mode."""
         self.width = width
         self.height = height
         self.perfect = perfect
@@ -37,6 +40,7 @@ class MazeGenerator:
             self._false_maze()
 
     def _perfect_maze(self) -> None:
+        """Carve a perfect maze with a depth-first search and a stack."""
         start_x = 0
         start_y = 0
         while self.visited[start_y][start_x]:
@@ -65,6 +69,7 @@ class MazeGenerator:
                 stack.pop()
 
     def _false_maze(self) -> None:
+        """Build a perfect maze first, then add loops for the Pac-Man mode."""
         self._perfect_maze()
         utils._remove_dead_ends(
             self.wall, self.width, self.height, self._rnd_seed

@@ -1,14 +1,19 @@
+"""Reads the configuration file and writes the output file."""
+
 import os
 from typing import Any, Dict, List, Tuple
 
 
 class ConfigParser:
+    """Reads a KEY=VALUE configuration file and checks its values."""
 
     def __init__(self, filepath: str) -> None:
+        """Store the path of the configuration file."""
         self.filepath = filepath
         self.config: Dict[str, Any] = {}
 
     def parse(self) -> Dict[str, Any]:
+        """Read the file line by line and return the settings."""
         if not os.path.exists(self.filepath):
             raise FileNotFoundError(f"Configuration "
                                     f"file not found: {self.filepath}")
@@ -30,6 +35,7 @@ class ConfigParser:
         return self.config
 
     def _process_kv(self, key: str, value: str) -> None:
+        """Change one text value into the right type and save it."""
         if key in ('WIDTH', 'HEIGHT'):
             self.config[key] = int(value)
         elif key in ('ENTRY', 'EXIT'):
@@ -60,6 +66,7 @@ class ConfigParser:
             self.config[key] = value
 
     def _validate(self) -> None:
+        """Check that all the keys are there and that the values make sense."""
         mandatory_keys = ['WIDTH',
                           'HEIGHT',
                           'ENTRY',
@@ -95,6 +102,7 @@ class ConfigParser:
         exit_pos: Tuple[int, int],
         path: str = "",
     ) -> None:
+        """Write the maze, the entry, the exit and the path into a file."""
         with open(filepath, "w", encoding="utf-8") as f:
             for row in walls:
                 f.write("".join(format(c & 0xF, "x") for c in row) + "\n")

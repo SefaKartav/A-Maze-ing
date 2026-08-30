@@ -1,3 +1,5 @@
+"""Finds the shortest path in a maze with a breadth-first search."""
+
 from collections import deque
 from typing import List, Optional, Tuple
 
@@ -31,6 +33,7 @@ def solve(
         entry_pos: Tuple[int, int],
         exit_pos: Tuple[int, int]
 ) -> Optional[str]:
+    """Return the shortest path as N/E/S/W letters, or None if it fails."""
     ex, ey = entry_pos
     xx, xy = exit_pos
 
@@ -80,6 +83,7 @@ def path_cells(
     entry_pos: Tuple[int, int],
     path: str,
 ) -> List[Tuple[int, int]]:
+    """Turn a path of letters into the list of cells that it visits."""
     cells = [entry_pos]
     x, y = entry_pos
 
