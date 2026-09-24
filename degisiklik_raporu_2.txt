@@ -1,0 +1,184 @@
+DEGISIKLIK RAPORU 2
+Tarih: 21 Eylul 2026
+Konu: Sayi uretiminin ilk rakamda durmasi (Bug 2)
+Dosyalar: src/grammar.py, src/decoding.py
+
+
+1. PROBLEM NEYDI
+----------------
+
+Cikti dosyasinda sayilar hep tek rakamli geliyordu:
+
+  "265 ve 345 topla"      -> a: 2.0,  b: 3.0
+  "16'nin karekoku"       -> a: 1.0
+  "144'un karekoku"       -> a: 1.0
+
+Her seferinde dogru sayinin SADECE ILK RAKAMI aliniyordu.
+265 -> 2, 345 -> 3, 16 -> 1, 144 -> 1
+
+
+2. SEBEBI NEYDI
+---------------
+
+Onemli not: is_complete_number fonksiyonu DOGRUYDU. Daha once
+tam sayilari kabul edecek sekilde duzeltilmisti ve o duzeltme
+yerindeydi. Hata orada degildi.
+
+Hata generate_number fonksiyonunun dongu yapisindaydi:
+
+    ESKI DONGU:
+    1. Token uret
+    2. generated_so_far'a ekle
+    3. is_complete_number ile kontrol et
+    4. Tamamsa HEMEN dur
+
+Model ilk token olarak "1" urettiginde, is_complete_number("1")
+artik True donuyordu (cunku tam sayilar kabul ediliyor). Dongu
+oracikta kesiliyordu. Model "16" yazmak istese bile ikinci
+tokena hic sira gelmiyordu.
+
+Yani: is_complete_number duzeltmesi dogruydu ama bir yan etki
+yaratti. Oncesinde nokta zorunlu oldugu icin dongu en az 3-4
+token calisiyordu. Sonrasinda tek rakam yeterli olunca hemen
+duruyordu.
+
+Asil eksik olan sey su: kod modele "bitirmek istiyor musun?"
+diye HIC SORMUYORDU. Sayinin bitip bitmedigine kod kendi basina
+karar verip donguyu kesiyordu.
+
+
+3. COZUM
+--------
+
+Karar modele birakildi. Artik sayi tamamlanmis durumdaysa,
+gecerli token listesine bir "bitis tokeni" de ekleniyor. Model
+o tokeni secerse sayi biter, rakam secerse devam eder.
+
+Bitis tokeni olarak yeni satir secildi. Qwen'in vocab.json
+dosyasinda yeni satir ham "\n" olarak degil, "Ċ" (Unicode
+U+010A) olarak saklaniyor. Bu BPE tokenizer'larin standart
+kodlamasi. Vocab kontrol edildi:
+
+    '\n'  -> YOK
+    'Ċ'   -> 198   (kullanilan)
+    ','   -> 11    (alternatif olabilirdi)
+
+Yeni satir secilmesinin sebebi: promptlar satir tabanli
+("first argument value: " ile bitiyor), model dogal olarak
+degeri yazip satir sonuna gelmek ister.
+
+
+4. YAPILAN DEGISIKLIKLER
+------------------------
+
+DOSYA 1: src/grammar.py
+
+  a) Dosyanin basina yeni sabit eklendi:
+
+     NUMBER_STOP_TOKEN = "Ċ"
+
+     Unicode kacis dizisi olarak yazildi ki dosya kodlamasi
+     sorun cikarmasin.
+
+  b) get_valid_tokens_for_number fonksiyonunun basina eklendi:
+
+     if is_complete_number(generated_so_far):
+         stop_id = vocab.get(NUMBER_STOP_TOKEN)
+         if stop_id is not None:
+             id_list.append(stop_id)
+
+     Sayi tamamlanmissa bitis tokeni gecerli secenekler
+     arasina giriyor. vocab.get kullanildi cunku baska bir
+     model farkli bir vocab ile gelirse program cokmemeli.
+
+  c) Ayni fonksiyonun docstring'i guncellendi.
+
+
+DOSYA 2: src/decoding.py
+
+  a) Import listesi guncellendi:
+     - is_complete_number CIKARILDI (artik bu dosyada
+       kullanilmiyor)
+     - NUMBER_STOP_TOKEN EKLENDI
+
+  b) generate_number dongusu degistirildi:
+
+     ESKI:
+         generated_so_far += chosen_token
+         input_ids.append(chosen_id)
+         complete = is_complete_number(generated_so_far)
+         if complete:
+             return generated_so_far
+
+     YENI:
+         if chosen_token == NUMBER_STOP_TOKEN:
+             return generated_so_far
+         generated_so_far += chosen_token
+         input_ids.append(chosen_id)
+
+     Kritik detay: bitis kontrolu EKLEMEDEN ONCE yapiliyor.
+     Boylece "Ċ" karakteri uretilen sayinin icine karismiyor.
+
+  c) generate_number docstring'i guncellendi.
+
+
+5. NE DEGISMEDI
+---------------
+
+Bu rapordaki degisiklikler disinda hicbir seye dokunulmadi.
+Hala duran bilinen sorunlar:
+
+  - Ġ karakteri string parametrelerine sizryor
+    (ornek: "ProgrammingĠisĠfun")
+  - Prompt 9 yanlis fonksiyon seciyor (fn_add_numbers)
+  - ORDINAL_WORDS listesi 6 eleman ile sinirli
+  - src/vocab.py:19 mypy hatasi
+  - flake8 .venv dizinini tariyor
+
+
+6. CONSTRAINED DECODING BOZULDU MU
+-----------------------------------
+
+Hayir, aksine kurallara daha uygun hale geldi.
+
+is_valid_number_fragment hala her adimda calisiyor, yani
+gecersiz karakterler (harf, ikinci nokta, ortada eksi)
+hala uretilemez. Bitis tokeni sadece sayi ZATEN gecerli ve
+tamamlanmis durumdayken listeye ekleniyor. Yani yarim bir
+sayiyi bitirmek mumkun degil.
+
+Ayrica bu degisiklik subject'in "secimi LLM yapmali"
+ilkesine daha uygun: onceden sayinin nerede bitecegine kod
+karar veriyordu, simdi model karar veriyor.
+
+
+7. SIRADAKI ADIM
+----------------
+
+  make run
+
+Beklenen: prompt 2 (265, 345), prompt 7 (16), prompt 8 (144)
+dogru sayilari uretmeli.
+
+Beklenmeyen: prompt 10'daki "ProgrammingĠisĠfun" hatasi
+devam edecek, o ayri bir sorun.
+
+RISK: Bu degisiklik model davranisina bagli. Model bitis
+tokenini cok erken secerse sayilar yine eksik cikabilir.
+Calistirip gormek gerekiyor.
+k1m23s01% make run
+uv run python -m src
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+Loading weights: 100%|███████████████████████| 311/311 [00:13<00:00, 22.55it/s]
+[1/11] Processing prompt: What is the sum of 2 and 3?
+[2/11] Processing prompt: What is the sum of 265 and 345?
+[3/11] Processing prompt: Greet shrek
+[4/11] Processing prompt: Greet john
+[5/11] Processing prompt: Reverse the string 'hello'
+[6/11] Processing prompt: Reverse the string 'world'
+[7/11] Processing prompt: What is the square root of 16?
+[8/11] Processing prompt: Calculate the square root of 144
+[9/11] Processing prompt: Replace all numbers in "Hello 34 I'm 233 years old" with NUMBERS
+[10/11] Processing prompt: Replace all vowels in 'Programming is fun' with asterisks
+[11/11] Processing prompt: Substitute the word 'cat' with 'dog' in 'The cat sat on the mat with another cat'
+k1m23s01% 

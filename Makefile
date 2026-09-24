@@ -1,39 +1,24 @@
-PYTHON  := python3
-CONFIG  := config.txt
-MAIN    := a_maze_ing.py
-
-MYPY_FLAGS := --warn-return-any --warn-unused-ignores \
-              --ignore-missing-imports --disallow-untyped-defs \
-              --check-untyped-defs
-
-.PHONY: all install run debug lint lint-strict build clean
-
-all: run
+.PHONY: install run debug clean lint lint-strict
 
 install:
-	$(PYTHON) -m pip install --upgrade pip
-	$(PYTHON) -m pip install flake8 mypy build
+	uv sync
 
 run:
-	$(PYTHON) $(MAIN) $(CONFIG)
+	uv run python -m src
 
 debug:
-	$(PYTHON) -m pdb $(MAIN) $(CONFIG)
-
-lint:
-	$(PYTHON) -m flake8 .
-	$(PYTHON) -m mypy . $(MYPY_FLAGS)
-
-lint-strict:
-	$(PYTHON) -m flake8 .
-	$(PYTHON) -m mypy . --strict
-
-build:
-	$(PYTHON) -m build
+	uv run python -m pdb -m src
 
 clean:
-	rm -rf __pycache__ mazegen/__pycache__
-	rm -rf .mypy_cache .pytest_cache
-	rm -rf build dist *.egg-info
-	rm -rf maze.txt
-	find . -type f -name "*.pyc" -delete
+	find . -type d -name "__pycache__" -exec rm -rf {} +
+	find . -type d -name ".mypy_cache" -exec rm -rf {} +
+	find . -type d -name ".pytest_cache" -exec rm -rf {} +
+	find . -type d -name "*.egg-info" -exec rm -rf {} +
+
+lint:
+	uv run flake8 .
+	uv run mypy . --warn-return-any --warn-unused-ignores --ignore-missing-imports --disallow-untyped-defs --check-untyped-defs
+
+lint-strict:
+	uv run flake8 .
+	uv run mypy . --strict
