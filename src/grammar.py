@@ -175,3 +175,12 @@ def build_byte_decoder() -> dict[str, int]:
 BYTE_DECODER = build_byte_decoder()
 
 
+def decode_bpe_string(raw: str, byte_decoder: dict[str, int]) -> str:
+    """Convert a raw BPE token string back into readable text."""
+    buffer = bytearray()
+    for char in raw:
+        if char in byte_decoder:
+            buffer.append(byte_decoder[char])
+        else:
+            buffer.extend(char.encode("utf-8"))
+    return buffer.decode("utf-8", errors="replace")

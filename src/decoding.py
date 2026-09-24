@@ -14,6 +14,8 @@ from .grammar import (
     get_valid_tokens_for_string,
     is_complete_string,
     NUMBER_STOP_TOKEN,
+    decode_bpe_string,
+    BYTE_DECODER
 )
 from .models import FunctionDefinition, FunctionCallResult
 
@@ -138,7 +140,7 @@ def generate_string(
         input_ids.append(chosen_id)
         complete = is_complete_string(generated_so_far[1:])
         if complete:
-            return generated_so_far
+            return decode_bpe_string(generated_so_far, BYTE_DECODER)
 
     raise RuntimeError(
         "Maximum number of iterations reached; "
@@ -189,7 +191,13 @@ def generate_function_call(
         selected_functions.parameters.items()
     ):
         oridinal = ORDINAL_WORDS[index]
-        param_prompt = prompt + context + f"\n{oridinal} argument value: "
+        param_prompt = (
+            f"Function: {selected_functions.name}\n"
+            f"Description: {selected_functions.description}\n"
+            f"{prompt}"
+            f"{context}"
+            f"\n{oridinal} argument ({param_name}) value: "
+        )
         param_input_ids = model.encode(param_prompt)[0].tolist()
 
         if param_spec.type == "number":
