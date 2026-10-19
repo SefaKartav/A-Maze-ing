@@ -52,7 +52,7 @@ All three paths are optional and have defaults:
 uv run python -m src \
   --functions_definition data/input/functions_definition.json \
   --input data/input/function_calling_tests.json \
-  --output data/output/function_calling_results.json
+  --output data/output/function_calls.json
 ```
 
 ### Other commands
@@ -102,22 +102,32 @@ the logits; the constraint only limits which options are on the table.
 
 **Stage 2 — filling the arguments.** The parameters of the chosen function
 are read from the definition file, in order. For each one, a new prompt is
-built that ends with an ordinal hint, for example `second argument value: `.
+built that ends with an ordinal hint, for example `second argument (b) value: `.
 The generation strategy then depends on the declared type:
 
-- **number** — `is_valid_number_fragment` accepts digits, a single dot, and
-  a minus sign in the first position only. `is_complete_number` stops the
-  loop once there are digits on both sides of the dot. The result is
-  converted with `float()`.
+- **number** — `is_valid_number_fragment` accepts digits, a single dot that
+  must follow a digit, and a minus sign in the first position only. The
+  newline token `Ċ` is used as a stop token: it only becomes selectable once
+  `is_complete_number` confirms the text is a finished number, and then the
+  model itself decides whether to stop or to keep adding digits. The result
+  is converted with `float()`.
+- **integer** — the same rules as `number`, but the dot is never allowed
+  (`allow_decimal=False`). The result is converted with `int()`.
 - **string** — an opening quote is placed manually, then any token is
   allowed until a closing quote appears. `is_valid_string_fragment` makes
   sure a quote can only arrive at the very end, since that quote closes the
   string.
 - **boolean** — the same candidate mechanism as the function name, with
   `true` and `false` as the only two candidates.
+- **any other type** (for example `array`) is accepted when the definition
+  file is loaded, but a prompt that selects such a function is reported as
+  failed with an "Unsupported type" message. The other prompts still run.
 
-Every loop is capped at `MAX_ITERATIONS` (100) so that a model which never
-reaches a stopping condition raises a clear error instead of hanging.
+Every loop is capped at `MAX_ITERATIONS` (100). A string that is still open
+at that point is closed by the decoder, so the value stays a valid string.
+For a number or a candidate (function name, boolean) a half-finished value
+would be meaningless, so a clear error is raised for that prompt instead of
+hanging.
 
 ### Module layout
 
@@ -147,18 +157,28 @@ Everything after that point works with typed objects, so a malformed input
 file is caught immediately with a precise message rather than causing a
 confusing failure deep inside the generation loop.
 
+**Unknown types do not stop the whole run.** The `type` field of a
+parameter is validated as a string, not as a fixed list of names. If the
+definition file contains a type the decoder does not support, only the
+prompts that select that function fail; every other prompt is still
+processed. Rejecting the whole file would lose all results because of a
+single function.
+
 **Errors are converted to `RuntimeError` at the edges.** Each loading
 function catches the exceptions it can expect, such as `FileNotFoundError`,
-`json.JSONDecodeError`, `OSError` and `ValidationError`, and re-raises them
-as a `RuntimeError` carrying a readable message. `main` then needs only a
-single `except RuntimeError` to present any startup failure to the user
-cleanly.
+`json.JSONDecodeError`, `UnicodeDecodeError`, `OSError` and
+`ValidationError`, and re-raises them as a `RuntimeError` carrying a
+readable message. `main` then needs only a single `except RuntimeError` to
+present any startup failure to the user cleanly. Two last safety nets sit
+below it: `KeyboardInterrupt` exits quietly with code 130, and any
+unexpected exception is printed as one line instead of a traceback.
 
 **One broken prompt does not stop the run.** `process_prompts` wraps each
 prompt in its own `try`. A prompt that fails is reported on standard error
-and the remaining prompts are still processed. This matters because a run
-processes a whole batch and losing all of it to one bad case would be
-wasteful.
+and the remaining prompts are still processed. At the end, the number of
+failed prompts is printed so that it cannot be missed in the log. This
+matters because a run processes a whole batch and losing all of it to one
+bad case would be wasteful.
 
 **Progress goes to standard error.** Progress messages and per-prompt
 failures are printed to `stderr`, never to `stdout`, so the machine
@@ -197,7 +217,7 @@ token still acceptable?" rather than looking at one character. This is why
 every rule is written as a prefix test.
 
 **Knowing when a value is finished.** Validity and completeness are two
-different questions. `12` is a valid number fragment but not a finished
+different questions. `12.` is a valid number fragment but not a finished
 number; `12.5` is both. Each type needed its own pair of functions, one
 asking "can this continue?" and one asking "can this stop?".
 
@@ -209,6 +229,14 @@ treat any quote the model produces as the closing one, ending the loop.
 **Mapping ids back to tokens.** The vocabulary file maps tokens to ids, but
 after choosing the highest-scoring logit the program has an id and needs
 the token. Building the reverse dictionary once at startup solved this.
+
+**A grammar that allows text it can never finish.** The first version of
+the number grammar accepted a dot in the first position. A fragment such
+as `.5` was "valid", but `is_complete_number` never accepted it, so the
+stop token never became available and the loop ran until the iteration
+limit. The fix was to make the validity rule stricter: a dot must follow a
+digit. The general lesson is that every fragment the grammar accepts must
+still have a way to become complete.
 
 ## Testing strategy
 
@@ -224,20 +252,33 @@ non-functional:
 
 - a missing input file
 - a file containing malformed JSON
+- a file that is not valid UTF-8
 - a file containing valid JSON of the wrong shape, such as an object where
   a list is expected
 - an empty list of function definitions
-- an unreadable output directory
+- an output directory that cannot be created or written to
 
 Each of these must produce a readable message on `stderr` and exit code 1,
 never a traceback.
+
+**Decoder test with a fake model.** The decoding loops were also run
+without the real network, using a fake model that returns random logits
+over a small hand-made vocabulary, across 300 random seeds. Because the
+"model" is random, it tries combinations a real model rarely would. Every
+result was checked: the function name exists, all parameters are present,
+and each value has the declared Python type (`float`, `int`, `str`,
+`bool`). It confirmed that functions with more than six parameters and
+`integer` parameters work, and that an unsupported type only fails its own
+prompt.
 
 **Edge cases in the prompts.** The subject asks for testing with empty
 strings, large numbers, special characters, ambiguous prompts and functions
 with several parameters.
 
 **Static checks.** `make lint` runs `flake8` for style and `mypy` with the
-flags required by the subject for type checking.
+flags required by the subject for type checking. The `.flake8` file
+excludes `llm_sdk/` (the provided package, not part of this
+implementation) and `.venv/`.
 
 ## Example usage
 
@@ -257,7 +298,7 @@ Run:
 uv run python -m src
 ```
 
-Output written to `data/output/function_calling_results.json`:
+Output written to `data/output/function_calls.json`:
 
 ```json
 [

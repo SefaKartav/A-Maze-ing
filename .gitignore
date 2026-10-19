@@ -24,4 +24,4 @@ dmypy.json
 .DS_Store
 
 # Output file
-maze.txt
+data/output/

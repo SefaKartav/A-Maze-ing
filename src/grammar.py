@@ -58,18 +58,26 @@ def filter_candidates(
     return remaining_candidates
 
 
-def is_valid_number_fragment(fragment: str) -> bool:
+def is_valid_number_fragment(fragment: str,
+                             allow_decimal: bool = True
+                             ) -> bool:
     """Check if the text can still become a valid number.
 
     It allows digits, one dot and a minus sign at the first place only.
+
+    When allow_decimal is False, the dot is not allowed at all.
     """
     if fragment == "":
         return True
-    allowed = "0123456789.-"
+    allowed = "0123456789-"
+    if allow_decimal:
+        allowed += "."
     for index, part in enumerate(fragment):
         if part not in allowed:
             return False
         if part == "-" and index != 0:
+            return False
+        if part == "." and (index == 0 or not fragment[index - 1].isdigit()):
             return False
     if fragment.count(".") > 1:
         return False
@@ -79,6 +87,7 @@ def is_valid_number_fragment(fragment: str) -> bool:
 def get_valid_tokens_for_number(
     generated_so_far: str,
     vocab: dict[str, int],
+    allow_decimal: bool = True
 ) -> list[int]:
     """Find the tokens that keep the number valid.
 
@@ -92,7 +101,7 @@ def get_valid_tokens_for_number(
             id_list.append(stop_id)
     for token_str, token_id in vocab.items():
         unified = generated_so_far + token_str
-        if is_valid_number_fragment(unified):
+        if is_valid_number_fragment(unified, allow_decimal):
             id_list.append(token_id)
     return id_list
 

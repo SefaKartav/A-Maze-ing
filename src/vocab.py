@@ -12,12 +12,15 @@ def load_vocab(model: Small_LLM_Model) -> dict[str, int]:
 
     It returns a dictionary that maps every token to its id.
     """
-    path = model.get_path_to_vocab_file()
+    try:
+        path = model.get_path_to_vocab_file()
+    except Exception as e:
+        raise RuntimeError(f"Vocab file could not be found: {e}") from e
 
     try:
         with open(path, "r", encoding="utf-8") as f:
             return json.load(f)
-    except (FileNotFoundError, json.JSONDecodeError) as e:
+    except (OSError, ValueError) as e:
         raise RuntimeError(f"Vocab file could not be read: {e}") from e
 
 

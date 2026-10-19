@@ -3,17 +3,18 @@
 They validate the input files and describe the output format.
 """
 
-from typing import Any, Literal
+from typing import Any
 from pydantic import BaseModel
 
 
 class ParameterSpec(BaseModel):
     """The type of one function parameter.
 
-    The type can only be a number, a string or a boolean.
+    Any type name is accepted when the file is loaded. Unsupported
+    types are reported later, only for the prompts that need them.
     """
 
-    type: Literal["number", "string", "boolean"]
+    type: str
 
 
 class FunctionDefinition(BaseModel):

@@ -92,6 +92,7 @@ def generate_number(
     input_ids: list[int],
     vocab: dict[str, int],
     id_to_token: dict[int, str],
+    allow_decimal: bool = True
 ) -> str:
     """Generate a number token by token.
 
@@ -101,7 +102,9 @@ def generate_number(
     generated_so_far = ""
     input_ids = input_ids.copy()
     for _ in range(MAX_ITERATIONS):
-        valid_ids = get_valid_tokens_for_number(generated_so_far, vocab)
+        valid_ids = get_valid_tokens_for_number(
+            generated_so_far, vocab, allow_decimal
+        )
         chosen_id, chosen_token = _select_next_token(
             model, input_ids, valid_ids, id_to_token
         )
@@ -142,10 +145,7 @@ def generate_string(
         if complete:
             return decode_bpe_string(generated_so_far, BYTE_DECODER)
 
-    raise RuntimeError(
-        "Maximum number of iterations reached; "
-        "production could not be completed"
-    )
+    return decode_bpe_string(generated_so_far + '"', BYTE_DECODER)
 
 
 def generate_function_call(
@@ -190,13 +190,16 @@ def generate_function_call(
     for index, (param_name, param_spec) in enumerate(
         selected_functions.parameters.items()
     ):
-        oridinal = ORDINAL_WORDS[index]
+        if index < len(ORDINAL_WORDS):
+            ordinal = ORDINAL_WORDS[index]
+        else:
+            ordinal = f"{index + 1}th"
         param_prompt = (
             f"Function: {selected_functions.name}\n"
             f"Description: {selected_functions.description}\n"
             f"{prompt}"
             f"{context}"
-            f"\n{oridinal} argument ({param_name}) value: "
+            f"\n{ordinal} argument ({param_name}) value: "
         )
         param_input_ids = model.encode(param_prompt)[0].tolist()
 
@@ -206,6 +209,12 @@ def generate_function_call(
             )
             parameters[param_name] = float(raw_value)
 
+        elif param_spec.type == "integer":
+            raw_value = generate_number(
+                model, param_input_ids, vocab, id_to_token,
+                allow_decimal=False,
+            )
+            parameters[param_name] = int(raw_value)
         elif param_spec.type == "string":
             raw_value = generate_string(
                 model, param_input_ids, vocab, id_to_token

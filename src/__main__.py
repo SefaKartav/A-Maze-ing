@@ -17,7 +17,7 @@ from .models import FunctionDefinition, PromptTest, FunctionCallResult
 
 DEFAULT_FUNCTIONS_PATH = "data/input/functions_definition.json"
 DEFAULT_INPUT_PATH = "data/input/function_calling_tests.json"
-DEFAULT_OUTPUT_PATH = "data/output/function_calling_results.json"
+DEFAULT_OUTPUT_PATH = "data/output/function_calls.json"
 
 
 def parse_args() -> argparse.Namespace:
@@ -56,6 +56,8 @@ def load_json_file(path: str) -> object:
         raise RuntimeError(f"File not found: {path}") from e
     except json.JSONDecodeError as e:
         raise RuntimeError(f"Invalid JSON in file {path}: {e}") from e
+    except UnicodeDecodeError as e:
+        raise RuntimeError(f"File {path} is not valid UTF-8: {e}") from e
     except OSError as e:
         raise RuntimeError(f"Error reading file {path}: {e}") from e
 
@@ -118,13 +120,13 @@ def write_results(path: str, results: list[FunctionCallResult]) -> None:
 
     The output directory is created when it does not exist yet.
     """
-    directory = os.path.dirname(path)
-    if directory:
-        os.makedirs(directory, exist_ok=True)
 
     data = [result.model_dump() for result in results]
 
     try:
+        directory = os.path.dirname(path)
+        if directory:
+            os.makedirs(directory, exist_ok=True)
         with open(path, "w", encoding="utf-8") as f:
             json.dump(data, f, indent=2, ensure_ascii=False)
     except OSError as e:
@@ -160,6 +162,12 @@ def process_prompts(
                 f"Failed to process prompt {prompt_test.prompt!r}: {e}",
                 file=sys.stderr,
             )
+    failed = len(prompts) - len(results)
+    if failed:
+        print(
+            f"{failed}/{len(prompts)} prompt(s) could not be processed.",
+            file=sys.stderr,
+        )
 
     return results
 
@@ -187,6 +195,12 @@ def main() -> None:
         write_results(args.output, results)
     except RuntimeError as e:
         print(f"Error: {e}", file=sys.stderr)
+        sys.exit(1)
+    except KeyboardInterrupt:
+        print("\nInterrupted by user.", file=sys.stderr)
+        sys.exit(130)
+    except Exception as e:
+        print(f"Unexpected error: {e}", file=sys.stderr)
         sys.exit(1)
 
 
